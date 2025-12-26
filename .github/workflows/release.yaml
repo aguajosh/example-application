@@ -3,36 +3,38 @@ name: Release and Deploy
 on:
   push:
     tags:
-      - 'v*'                      # any tag like v1.0.0, v1.1.2 …
+      - "v*"                        # e.g. v1.0.0
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
+      # 1 — Checkout source
       - name: Checkout
         uses: actions/checkout@v2
 
+      # 2 — Expose the tag (v1.0.0) to later steps
       - name: Set TAG_NAME
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      # ---- Docker Hub login ----
+      # 3 — Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.REGISTRY_USER }}
           password: ${{ secrets.REGISTRY_TOKEN }}
 
-      # ---- Build & push image ----
+      # 4 — Build & push the image
       - name: Build & Push image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: docker.io/${{ secrets.REGISTRY_USER }}/example-application:${{ env.TAG_NAME }}
+          tags: "docker.io/${{ secrets.REGISTRY_USER }}/example-application:${{ env.TAG_NAME }}"
 
   trigger-deployment-update:
-    runs-on: ubuntu-latest
     needs: build-and-push
+    runs-on: ubuntu-latest
     steps:
       - name: Set TAG_NAME again
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
